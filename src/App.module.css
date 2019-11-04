@@ -1,0 +1,22 @@
+.wrapper {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  height: 100%;
+  max-width: 100vw;
+}
+
+.wrapper > header {
+  width: 100vw;
+  height: 4rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: black;
+}
+
+.wrapper > main {
+  width: 100%;
+  height: calc(100vh - 4rem);
+  padding: 16px;
+}
