@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
 import classNames from "classnames";
 import styles from "./Song.module.css";
@@ -16,6 +16,8 @@ const Song = ({ id }) => {
 
   const [startOffset, setStartOffset] = useState(Date.now());
 
+  const altWordIndex = useRef(0);
+  const timeoutRef = useRef(null);
   // const [autoPlaying, setAutoplaying] = useState(false);
 
   // useInterval(() => {
@@ -45,27 +47,32 @@ const Song = ({ id }) => {
   }, [song, wordMap]);
 
   useEffect(() => {
-    if (song && song.words && wordIndex) {
-      const { mappedWords, currentLineIndex } = mapWordsToLines(
-        song.words,
-        wordIndex
-      );
-      setDisplayLyrics(mappedWords);
-      setLineIndex(currentLineIndex);
-    }
-  }, [wordIndex, song]);
+    updateDisplayLyrics();
+  }, [altWordIndex, song]);
 
   useEffect(() => {
     // console.log("song : ", song);
     // console.log("wordMap : ", wordMap);
-    // console.log("displayLyrics : ", displayLyrics);
+    console.log("displayLyrics : ", displayLyrics);
   }, [wordMap, song, displayLyrics]);
+
+  const updateDisplayLyrics = () => {
+    if (song && song.words && altWordIndex.current) {
+      const { mappedWords, currentLineIndex } = mapWordsToLines(
+        song.words,
+        altWordIndex.current
+      );
+      setDisplayLyrics(mappedWords);
+      setLineIndex(currentLineIndex);
+    }
+  };
 
   const reset = () => {
     setLineIndex(0);
     setWordIndex(0);
+    altWordIndex.current = 0;
     setDisplayLyrics([]);
-    video.stopVideo();
+    // video.stopVideo();
   };
 
   const handleVideoReady = e => {
@@ -80,9 +87,24 @@ const Song = ({ id }) => {
     video.playVideo();
   };
 
-  // const autoplay = () => {
-  //   setAutoplaying(true);
-  // };
+  const autoplay = () => {
+    const { words } = song;
+    let currentWord = words[altWordIndex.current];
+
+    if (currentWord.duration) {
+      timeoutRef.current = window.setTimeout(() => {
+        console.log(currentWord);
+        // setWordIndex(wordIndex + 1);
+        altWordIndex.current = altWordIndex.current + 1;
+        updateDisplayLyrics();
+        autoplay();
+      }, currentWord.duration);
+    } else {
+      console.log("ended");
+      window.clearTimeout(timeoutRef.current);
+      reset();
+    }
+  };
 
   const mapWordsToLines = (words, index) => {
     const wordSlice = words.slice(0, index);
@@ -112,12 +134,14 @@ const Song = ({ id }) => {
 
   const handleEndClick = () => {
     addEndTimeStamp();
-    setWordIndex(wordIndex + 1);
+    // setWordIndex(wordIndex + 1);
+    altWordIndex.current += 1;
   };
 
   const handlePrevClick = () => {
-    if (wordIndex > 0) {
-      setWordIndex(wordIndex - 1);
+    if (altWordIndex.current > 0) {
+      // setWordIndex(wordIndex - 1);
+      altWordIndex.current -= 1;
     }
   };
 
@@ -125,9 +149,10 @@ const Song = ({ id }) => {
     const { words } = song;
     const newWords = [...words];
     const startTime = Date.now() - startOffset;
+    const index = altWordIndex.current;
 
-    newWords[wordIndex] = {
-      ...newWords[wordIndex],
+    newWords[index] = {
+      ...newWords[index],
       startTime
     };
 
@@ -142,12 +167,17 @@ const Song = ({ id }) => {
     const newWords = [...words];
     const newWord = newWords[wordIndex];
     const endTime = Date.now() - startOffset;
+    const index = altWordIndex.current;
 
-    newWords[wordIndex] = {
-      ...newWords[wordIndex],
+    // console.log(new)
+
+    newWords[index] = {
+      ...newWords[index],
       endTime: endTime,
-      duration: endTime - newWord.startTime
+      duration: endTime - newWords[index].startTime
     };
+
+    console.log(newWords);
 
     setSong({
       ...song,
@@ -167,7 +197,7 @@ const Song = ({ id }) => {
 
       <div>
         <button onClick={play}>play</button>
-        {/* <button onClick={autoplay}>auto play </button> */}
+        <button onClick={autoplay}>auto play </button>
         <button onPointerDown={handlePrevClick}>prev word</button>
         <button onPointerDown={handleClick} onPointerUp={handleEndClick}>
           next word
