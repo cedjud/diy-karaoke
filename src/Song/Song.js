@@ -3,6 +3,12 @@ import YouTube from "react-youtube";
 import classNames from "classnames";
 import styles from "./Song.module.css";
 import useInterval from "../hooks/useInterval";
+import Lyrics from "../components/Lyrics/Lyrics";
+
+const apiUrl =
+  process.env.NODE_ENV === "development"
+    ? process.env.REACT_APP_API_HOST_DEV
+    : process.env.REACT_APP_API_HOST_PROD;
 
 const Song = ({ id }) => {
   const [song, setSong] = useState(null);
@@ -16,17 +22,18 @@ const Song = ({ id }) => {
 
   const [startOffset, setStartOffset] = useState(Date.now());
 
+  const videoPlaying = useRef(false);
+  const autoPlaying = useRef(false);
+  const isRecording = useRef(false);
+
   const altWordIndex = useRef(0);
   const timeoutRef = useRef(null);
-  // const [autoPlaying, setAutoplaying] = useState(false);
-
-  // useInterval(() => {
-  //   setWordIndex(wordIndex + 1);
-  // }, 1000);
+  const currentWord = useRef(null);
+  const previousWord = useRef(undefined);
 
   useEffect(() => {
     const geniusGetSong = async id => {
-      const url = `http://localhost:5000/nst-prototype/us-central1/getLyrics?songId=${id}`;
+      const url = `${apiUrl}getLyrics?songId=${id}`;
       try {
         const response = await fetch(url);
         const data = await response.json();
@@ -53,7 +60,7 @@ const Song = ({ id }) => {
   useEffect(() => {
     // console.log("song : ", song);
     // console.log("wordMap : ", wordMap);
-    console.log("displayLyrics : ", displayLyrics);
+    // console.log("displayLyrics : ", displayLyrics);
   }, [wordMap, song, displayLyrics]);
 
   const updateDisplayLyrics = () => {
@@ -68,41 +75,69 @@ const Song = ({ id }) => {
   };
 
   const reset = () => {
-    setLineIndex(0);
-    setWordIndex(0);
-    altWordIndex.current = 0;
-    setDisplayLyrics([]);
-    // video.stopVideo();
+    stop();
   };
 
   const handleVideoReady = e => {
     setVideo(e.target);
   };
 
-  // const handleVideoPlay = e => {
-  //   setStartOffset(Date.now());
-  // };
+  const handleVideoPlay = e => {
+    setStartOffset(Date.now());
+  };
 
   const play = () => {
+    videoPlaying.current = true;
     video.playVideo();
   };
 
+  const stop = () => {
+    setLineIndex(0);
+    setWordIndex(0);
+    videoPlaying.current = false;
+    altWordIndex.current = 0;
+    setDisplayLyrics([]);
+    video.stopVideo();
+    if (isRecording.current) {
+      isRecording.current = false;
+    }
+    if (autoPlaying.current) {
+      autoPlaying.current = false;
+      window.clearTimeout(timeoutRef.current);
+      reset();
+    }
+  };
+
   const autoplay = () => {
+    console.log("videoPlaying.current : ", videoPlaying.current);
+    if (!videoPlaying.current) {
+      play();
+    }
+
+    if (!autoPlaying.current) {
+      autoPlaying.current = true;
+    }
+
     const { words } = song;
     let currentWord = words[altWordIndex.current];
+    let previousWord = words[altWordIndex.current - 1] || 0;
+
+    altWordIndex.current = altWordIndex.current + 1;
+    updateDisplayLyrics();
 
     if (currentWord.duration) {
       timeoutRef.current = window.setTimeout(() => {
-        console.log(currentWord);
+        // console.log(currentWord);
         // setWordIndex(wordIndex + 1);
-        altWordIndex.current = altWordIndex.current + 1;
-        updateDisplayLyrics();
+
         autoplay();
-      }, currentWord.duration);
+      }, currentWord.duration + (currentWord.startTime - (previousWord.endTime || 0)));
+      // }, currentWord.duration);
     } else {
       console.log("ended");
+      autoPlaying.current = false;
       window.clearTimeout(timeoutRef.current);
-      reset();
+      // reset();
     }
   };
 
@@ -129,18 +164,75 @@ const Song = ({ id }) => {
   };
 
   const handleClick = () => {
-    addStartingTimeStamp();
-  };
-
-  const handleEndClick = () => {
-    addEndTimeStamp();
-    // setWordIndex(wordIndex + 1);
+    if (!videoPlaying.current && !autoPlaying.current) {
+      play();
+    }
+    // addStartingTimeStamp();
+    updateCurrentWord();
     altWordIndex.current += 1;
   };
 
+  const handleEndClick = () => {
+    // addEndTimeStamp();
+    updateCurrentWord();
+    altWordIndex.current += 1;
+  };
+
+  const updateCurrentWord = () => {
+    if (!isRecording.current) {
+      isRecording.current = true;
+    }
+    // console.log("altWordIndex : ", altWordIndex.current);
+    if (song && song.words && altWordIndex) {
+      const currentDate = Date.now();
+      let newWords = [...song.words];
+
+      if (currentWord.current && currentWord.current.startTime) {
+        previousWord.current = {
+          ...currentWord.current,
+          endTime: currentDate - startOffset,
+          duration: currentDate - startOffset - currentWord.current.startTime
+        };
+      }
+
+      currentWord.current = {
+        ...newWords[altWordIndex.current],
+        startTime: currentDate - startOffset
+      };
+
+      newWords[altWordIndex.current - 1] = previousWord.current;
+      // newWords[altWordIndex.current] = currentWord.current;
+
+      setSong({
+        ...song,
+        words: newWords
+      });
+
+      // console.log("newWords : ", newWords);
+      // console.log("current word: ", currentWord.current);
+      // console.log("previous word: ", previousWord.current);
+    }
+  };
+  // const handleClick = () => {
+  //   if (!videoPlaying.current && !autoPlaying.current) {
+  //     play();
+  //   }
+
+  //   if (altWordIndex.current > 0) {
+  //     addEndTimeStamp();
+  //     altWordIndex.current += 1;
+  //   }
+  //   addStartingTimeStamp();
+  // };
+
+  // const handleEndClick = () => {
+  //   addEndTimeStamp();
+  //   altWordIndex.current += 1;
+  //   addStartingTimeStamp();
+  // };
+
   const handlePrevClick = () => {
     if (altWordIndex.current > 0) {
-      // setWordIndex(wordIndex - 1);
       altWordIndex.current -= 1;
     }
   };
@@ -151,11 +243,13 @@ const Song = ({ id }) => {
     const startTime = Date.now() - startOffset;
     const index = altWordIndex.current;
 
+    // console.log("startTimeStamp before:", newWords[index]);
     newWords[index] = {
       ...newWords[index],
       startTime
     };
 
+    // console.log("startTimeStamp after:", newWords[index]);
     setSong({
       ...song,
       words: newWords
@@ -169,15 +263,13 @@ const Song = ({ id }) => {
     const endTime = Date.now() - startOffset;
     const index = altWordIndex.current;
 
-    // console.log(new)
+    // console.log("endTimeStamp before:", newWords[index]);
 
     newWords[index] = {
       ...newWords[index],
       endTime: endTime,
       duration: endTime - newWords[index].startTime
     };
-
-    console.log(newWords);
 
     setSong({
       ...song,
@@ -187,57 +279,42 @@ const Song = ({ id }) => {
 
   return song ? (
     <section className={styles.container}>
-      {/* <YouTube
+      <YouTube
         videoId={song.youtubeId}
         containerClassName={styles.videoContainer}
         className={styles.video}
         onReady={handleVideoReady}
-        // onPlay={handleVideoPlay}
-      /> */}
+        onPlay={handleVideoPlay}
+      />
 
-      <div>
-        <button onClick={play}>play</button>
-        <button onClick={autoplay}>auto play </button>
-        <button onPointerDown={handlePrevClick}>prev word</button>
-        <button onPointerDown={handleClick} onPointerUp={handleEndClick}>
+      <Lyrics
+        wordMap={wordMap}
+        displayLyrics={displayLyrics}
+        lineIndex={lineIndex}
+      />
+
+      <div className={styles.controls}>
+        <button
+          className={styles.mainButton}
+          onPointerDown={handleClick}
+          onPointerUp={handleEndClick}
+        >
           next word
+          {/* {isRecording.current === true ? "true" : "false"} */}
         </button>
-        <button onClick={reset}>reset</button>
-      </div>
-
-      <div className={styles.lyrics}>
-        {/* Display previous line */}
-        {displayLyrics.length > 1 && lineIndex >= 1 && (
-          <p className={styles.previousLine}>
-            {displayLyrics[lineIndex - 1].map((word, index) => (
-              <span key={`previous-word-${index}`}>{word.word}</span>
-            ))}
-          </p>
-        )}
-        {/* Display current line */}
-        {displayLyrics.length > 0 && (
-          <p className={styles.currentLine}>
-            {displayLyrics[lineIndex].map((word, index) => (
-              <span key={`word-${index}`}>{word.word}</span>
-            ))}
-          </p>
-        )}
-        {/* Display current line shadow */}
-        {wordMap.length > 0 && (
-          <p className={styles.currentLinePreview}>
-            {wordMap[lineIndex].map((word, index) => (
-              <span key={`word-${index}`}>{word.word}</span>
-            ))}
-          </p>
-        )}
-        {wordMap.length > 0 && (
-          <p className={styles.nextLine}>
-            {wordMap[0].word}
-            {wordMap[lineIndex + 1].map((word, index) => (
-              <span key={`next-word-${index}`}>{word.word}</span>
-            ))}
-          </p>
-        )}
+        {/* <button onClick={play}>play</button> */}
+        <button
+          onClick={stop}
+          // disabled={isRecording.current || autoPlaying.current}
+        >
+          stop
+        </button>
+        <button onClick={autoplay}>
+          Karaoke!
+          {/* {autoPlaying.current === true ? "true" : "false"} */}
+        </button>
+        {/* <button onPointerDown={handlePrevClick}>prev word</button> */}
+        {/* <button onClick={reset}>reset</button> */}
       </div>
     </section>
   ) : null;

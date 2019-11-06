@@ -15,7 +15,7 @@ const parseSongData = songData => {
     };
 
     const youtubeData = song.media.filter(medium => {
-      console.log(medium.provider);
+      // console.log(medium.provider);
       return medium.provider === "youtube";
     });
 
@@ -25,7 +25,7 @@ const parseSongData = songData => {
       parsedData.youtubeId = getYoutubeId(youtubeUrl);
     }
 
-    console.log("parsedData:", parsedData);
+    // console.log("parsedData:", parsedData);
 
     return parsedData;
   }
@@ -59,10 +59,14 @@ const handleGetLyrics = async (req, res) => {
     const filteredLyricsArray = lyricsArray.filter(line => line !== "");
 
     const wordArray = filteredLyricsArray.reduce((acc, line, index) => {
-      let parsedLine = line.split(" ").map(word => ({
-        word: word,
-        line: index
-      }));
+      let parsedLine = [{ word: line, line: index }];
+
+      if (!/\[(.*?)\]/g.test(line)) {
+        parsedLine = line.split(" ").map(word => ({
+          word: word,
+          line: index
+        }));
+      }
 
       return acc.concat(parsedLine);
     }, []);
@@ -70,7 +74,7 @@ const handleGetLyrics = async (req, res) => {
     parsedSongData.lyrics = filteredLyricsArray;
     parsedSongData.words = wordArray;
 
-    console.log(parsedSongData);
+    // console.log(wordArray);
 
     res.json(parsedSongData);
   } catch (err) {

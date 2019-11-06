@@ -1,5 +1,10 @@
 .container {
   width: 100%;
+  height: 100%;
+  /* max-width: 375px; */
+  display: flex;
+  flex-flow: column nowrap;
+  justify-content: flex-start;
 }
 
 .videoContainer {
@@ -19,9 +24,9 @@
 }
 
 .lyrics {
-  margin-top: 6rem;
+  margin-top: 2rem;
+  margin-bottom: auto;
   position: relative;
-  height: 2rem;
 }
 
 .lyrics span {
@@ -30,40 +35,63 @@
 }
 
 .lyrics p {
-  position: absolute;
   left: 0;
 
-  line-height: 1rem;
   text-transform: uppercase;
 
-  display: flex;
   width: 100%;
-  height: 100%;
-  /* justify-content: center; */
   align-items: center;
 
-  font-size: 1.5rem;
-  margin: 0;
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
 }
 
 .previousLine {
-  bottom: 100%;
+  bottom: 120%;
 }
 
 .nextLine {
-  top: 100%;
-  opacity: 0.3;
+  top: 120%;
+  opacity: 0.1;
 }
 
-.currentLine {
-  font-size: 2rem;
+.currentLines {
+  position: relative;
+}
+
+.currentLine span:last-of-type {
+  color: red;
 }
 
 .currentLinePreview {
-  opacity: 0.3;
+  opacity: 0.1;
 }
 
 p.currentLine,
 p.currentLinePreview {
-  font-size: 1.8rem;
+  font-size: 1.7rem;
+}
+
+.currentLine {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  flex-flow: row wrap;
+}
+
+.controls button {
+  height: 2rem;
+  flex: 0 0 calc(50% - 0.5rem);
+  margin: 1rem 0 0;
+}
+
+.controls .mainButton {
+  height: 3rem;
+  width: 100%;
+  flex: 0 0 100%;
 }

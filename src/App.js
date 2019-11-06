@@ -21,7 +21,10 @@ function App({ history }) {
   return (
     <div className={styles.wrapper}>
       <header>
-        <Search searchAction={handleSearch} />
+        <div>
+          <h1>DIY Karaoke</h1>
+          <Search searchAction={handleSearch} />
+        </div>
       </header>
 
       <main>

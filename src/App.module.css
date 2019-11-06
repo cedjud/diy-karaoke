@@ -11,12 +11,29 @@
   height: 4rem;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   background-color: black;
+}
+
+.wrapper > header > div {
+  width: 100vw;
+  max-width: 375px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0 1rem;
+}
+
+.wrapper > header h1 {
+  color: white;
+  font-weight: normal;
+  font-size: 1.25rem;
 }
 
 .wrapper > main {
   width: 100%;
+  max-width: 375px;
   height: calc(100vh - 4rem);
   padding: 16px;
 }

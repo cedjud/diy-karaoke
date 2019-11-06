@@ -1,4 +1,7 @@
-const apiUrl = process.env.REACT_APP_API_HOST_DEV;
+const apiUrl =
+  process.env.NODE_ENV === "development"
+    ? process.env.REACT_APP_API_HOST_DEV
+    : process.env.REACT_APP_API_HOST_PROD;
 
 export const geniusSearch = async (searchTerm = `it's not unusual`) => {
   const url = `${apiUrl}searchTracks?searchTerm=${encodeURI(searchTerm)}`;
