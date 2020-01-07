@@ -13,9 +13,14 @@ function App({ history }) {
   const [searchResults, setSearchResults] = useState(null);
 
   const handleSearch = async searchTerm => {
-    const search = await geniusSearch(searchTerm);
-    setSearchResults(search);
-    history.push("/search");
+    console.log("here");
+    try {
+      const search = await geniusSearch(searchTerm);
+      setSearchResults(search);
+      history.push("/search");
+    } catch (error) {
+      console.warn(error);
+    }
   };
 
   return (

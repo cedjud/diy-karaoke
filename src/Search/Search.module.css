@@ -6,12 +6,8 @@
   height: 2rem;
 }
 
-.container:focus-within button {
-  display: inline-flex;
-}
-
 .container:focus-within label {
-  display: none;
+  /* display: none; */
 }
 
 .container input {
@@ -49,5 +45,9 @@
 }
 
 .container button {
-  display: none;
+  /* display: none; */
+}
+
+.container:focus-within button {
+  /* display: inline-flex; */
 }

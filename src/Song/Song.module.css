@@ -1,7 +1,6 @@
 .container {
   width: 100%;
   height: 100%;
-  /* max-width: 375px; */
   display: flex;
   flex-flow: column nowrap;
   justify-content: flex-start;
@@ -21,61 +20,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-}
-
-.lyrics {
-  margin-top: 2rem;
-  margin-bottom: auto;
-  position: relative;
-}
-
-.lyrics span {
-  display: inline-block;
-  margin-right: 0.5ch;
-}
-
-.lyrics p {
-  left: 0;
-
-  text-transform: uppercase;
-
-  width: 100%;
-  align-items: center;
-
-  font-size: 1.1rem;
-  margin: 0 0 0.5rem;
-}
-
-.previousLine {
-  bottom: 120%;
-}
-
-.nextLine {
-  top: 120%;
-  opacity: 0.1;
-}
-
-.currentLines {
-  position: relative;
-}
-
-.currentLine span:last-of-type {
-  color: red;
-}
-
-.currentLinePreview {
-  opacity: 0.1;
-}
-
-p.currentLine,
-p.currentLinePreview {
-  font-size: 1.7rem;
-}
-
-.currentLine {
-  position: absolute;
-  top: 0;
-  left: 0;
 }
 
 .controls {

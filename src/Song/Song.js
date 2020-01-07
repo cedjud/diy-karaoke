@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import YouTube from "react-youtube";
-import classNames from "classnames";
 import styles from "./Song.module.css";
-import useInterval from "../hooks/useInterval";
 import Lyrics from "../components/Lyrics/Lyrics";
 
 const apiUrl =
@@ -17,7 +15,6 @@ const Song = ({ id }) => {
 
   const [displayLyrics, setDisplayLyrics] = useState([]);
 
-  const [wordIndex, setWordIndex] = useState(0);
   const [lineIndex, setLineIndex] = useState(0);
 
   const [startOffset, setStartOffset] = useState(Date.now());
@@ -30,6 +27,8 @@ const Song = ({ id }) => {
   const timeoutRef = useRef(null);
   const currentWord = useRef(null);
   const previousWord = useRef(undefined);
+
+  const karaokeable = useRef(false);
 
   useEffect(() => {
     const geniusGetSong = async id => {
@@ -74,10 +73,6 @@ const Song = ({ id }) => {
     }
   };
 
-  const reset = () => {
-    stop();
-  };
-
   const handleVideoReady = e => {
     setVideo(e.target);
   };
@@ -93,7 +88,6 @@ const Song = ({ id }) => {
 
   const stop = () => {
     setLineIndex(0);
-    setWordIndex(0);
     videoPlaying.current = false;
     altWordIndex.current = 0;
     setDisplayLyrics([]);
@@ -104,7 +98,6 @@ const Song = ({ id }) => {
     if (autoPlaying.current) {
       autoPlaying.current = false;
       window.clearTimeout(timeoutRef.current);
-      reset();
     }
   };
 
@@ -128,7 +121,6 @@ const Song = ({ id }) => {
     if (currentWord.duration) {
       timeoutRef.current = window.setTimeout(() => {
         // console.log(currentWord);
-        // setWordIndex(wordIndex + 1);
 
         autoplay();
       }, currentWord.duration + (currentWord.startTime - (previousWord.endTime || 0)));
@@ -163,7 +155,9 @@ const Song = ({ id }) => {
     return { mappedWords, currentLineIndex };
   };
 
-  const handleClick = () => {
+  const handleClick = e => {
+    e.preventDefault();
+
     if (!videoPlaying.current && !autoPlaying.current) {
       play();
     }
@@ -182,7 +176,11 @@ const Song = ({ id }) => {
     if (!isRecording.current) {
       isRecording.current = true;
     }
-    // console.log("altWordIndex : ", altWordIndex.current);
+
+    if (!karaokeable.current) {
+      karaokeable.current = true;
+    }
+
     if (song && song.words && altWordIndex) {
       const currentDate = Date.now();
       let newWords = [...song.words];
@@ -201,80 +199,12 @@ const Song = ({ id }) => {
       };
 
       newWords[altWordIndex.current - 1] = previousWord.current;
-      // newWords[altWordIndex.current] = currentWord.current;
 
       setSong({
         ...song,
         words: newWords
       });
-
-      // console.log("newWords : ", newWords);
-      // console.log("current word: ", currentWord.current);
-      // console.log("previous word: ", previousWord.current);
     }
-  };
-  // const handleClick = () => {
-  //   if (!videoPlaying.current && !autoPlaying.current) {
-  //     play();
-  //   }
-
-  //   if (altWordIndex.current > 0) {
-  //     addEndTimeStamp();
-  //     altWordIndex.current += 1;
-  //   }
-  //   addStartingTimeStamp();
-  // };
-
-  // const handleEndClick = () => {
-  //   addEndTimeStamp();
-  //   altWordIndex.current += 1;
-  //   addStartingTimeStamp();
-  // };
-
-  const handlePrevClick = () => {
-    if (altWordIndex.current > 0) {
-      altWordIndex.current -= 1;
-    }
-  };
-
-  const addStartingTimeStamp = () => {
-    const { words } = song;
-    const newWords = [...words];
-    const startTime = Date.now() - startOffset;
-    const index = altWordIndex.current;
-
-    // console.log("startTimeStamp before:", newWords[index]);
-    newWords[index] = {
-      ...newWords[index],
-      startTime
-    };
-
-    // console.log("startTimeStamp after:", newWords[index]);
-    setSong({
-      ...song,
-      words: newWords
-    });
-  };
-
-  const addEndTimeStamp = () => {
-    const { words } = song;
-    const newWords = [...words];
-    const newWord = newWords[wordIndex];
-    const endTime = Date.now() - startOffset;
-    const index = altWordIndex.current;
-
-    // console.log("endTimeStamp before:", newWords[index]);
-
-    newWords[index] = {
-      ...newWords[index],
-      endTime: endTime,
-      duration: endTime - newWords[index].startTime
-    };
-
-    setSong({
-      ...song,
-      words: newWords
-    });
   };
 
   return song ? (
@@ -296,8 +226,8 @@ const Song = ({ id }) => {
       <div className={styles.controls}>
         <button
           className={styles.mainButton}
-          onPointerDown={handleClick}
-          onPointerUp={handleEndClick}
+          onMouseDown={handleClick}
+          onMouseUp={handleEndClick}
         >
           next word
           {/* {isRecording.current === true ? "true" : "false"} */}
@@ -309,12 +239,11 @@ const Song = ({ id }) => {
         >
           stop
         </button>
-        <button onClick={autoplay}>
+        <button onClick={autoplay} disabled={!karaokeable.current}>
           Karaoke!
           {/* {autoPlaying.current === true ? "true" : "false"} */}
         </button>
         {/* <button onPointerDown={handlePrevClick}>prev word</button> */}
-        {/* <button onClick={reset}>reset</button> */}
       </div>
     </section>
   ) : null;

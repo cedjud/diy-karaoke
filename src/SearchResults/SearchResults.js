@@ -1,11 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import styles from "./SearchResults.module.css";
 
 const SearchResults = ({ results }) => {
   return (
     <>
-      <h1>search result</h1>
-      <ul className="results">
+      <h2 className={styles.heading}>search result</h2>
+      <ul className={styles.list}>
         {results &&
           results.map(result => (
             <li key={result.id}>
